@@ -40,13 +40,13 @@ def execute_load_data(range_value, sql_database, sql_host, sql_user, sql_pass):
             nse_url="https://www.nseindia.com/content/historical/EQUITIES/{}/{}/cm{}bhav.csv.zip".format(target_date.strftime("%Y"),target_date.strftime("%b").upper(),target_date.strftime("%d%b%Y").upper())
             print ("Attempting to download file: {}".format(nse_url))
 
-            csv_name="tmp/cm{}bhav.csv".format(target_date.strftime("%d%b%Y"))
+            csv_name="tmp/cm{}bhav.csv".format(target_date.strftime("%d%b%Y").upper())
             file_name=csv_name+".zip"
 
             days=days+1
 
             req = urllib2.Request(nse_url, headers={'User-Agent' : "Magic Browser"})
-            con = urllib2.urlopen( req )
+            con = urllib2.urlopen(req)
             data = con.read()
 
             # Write data to file
