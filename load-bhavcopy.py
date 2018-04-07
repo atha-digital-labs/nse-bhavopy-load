@@ -3,10 +3,11 @@
 import click
 import csv
 import datetime
-import urllib2
-import zipfile
 import os, errno
 import MySQLdb
+import logging
+import nseutils
+import dbutils
 
 
 @click.command(help="Run this script to load bhavcopy CSV from from NSE to local mySQL database. This files can be loaded for a give date or month or year.")
@@ -30,42 +31,25 @@ def execute_load_data(range_value, sql_database, sql_host, sql_user, sql_pass):
     if not sql_pass:
         raise click.UsageError("The sql-pass option must be provided")
 
+    logging.basicConfig(filename='./log/detailed.log', level=logging.INFO)
+    dbutils.init(sql_host,sql_user,sql_pass,sql_database)
+
     today=datetime.datetime.now()
     days=0
 
     while days < range_value:
         target_date=(today - datetime.timedelta(days))
+        days=days+1
 
-        try:
-            nse_url="https://www.nseindia.com/content/historical/EQUITIES/{}/{}/cm{}bhav.csv.zip".format(target_date.strftime("%Y"),target_date.strftime("%b").upper(),target_date.strftime("%d%b%Y").upper())
-            print ("Attempting to download file: {}".format(nse_url))
+        logging.info("Processing data for date: {} ".format(target_date.strftime("%d%b%Y").upper()))
 
-            csv_name="tmp/cm{}bhav.csv".format(target_date.strftime("%d%b%Y").upper())
-            file_name=csv_name+".zip"
+        if nseutils.validate_date(target_date) > 0:
+            logging.info("data already available!!")
+            continue
 
-            days=days+1
-
-            req = urllib2.Request(nse_url, headers={'User-Agent' : "Magic Browser"})
-            con = urllib2.urlopen(req)
-            data = con.read()
-
-            # Write data to file
-            file_ = open(file_name, 'w')
-            file_.write(data)
-            file_.close()
-
-            #unzip file
-            zip_ref = zipfile.ZipFile(file_name, 'r')
-            zip_ref.extractall("tmp")
-            zip_ref.close()
-
-            try:
-                os.remove(file_name)
-            except:
-                print("unable to delete file.")
-
+        if nseutils.download_bhavcopy(target_date) == 0:
             # Load csv data to MySQL database
-            print("loading csv to database!")
+            logging.info("loading csv to database!")
 
             try:
                 mydb = MySQLdb.connect(host=sql_host,
@@ -74,6 +58,7 @@ def execute_load_data(range_value, sql_database, sql_host, sql_user, sql_pass):
                     db=sql_database)
                 cursor = mydb.cursor()
 
+                csv_name="tmp/cm{}bhav.csv".format(target_date.strftime("%d%b%Y").upper())
                 csv_data = csv.reader(file(csv_name))
                 header=1
                 for row in csv_data:
@@ -84,17 +69,15 @@ def execute_load_data(range_value, sql_database, sql_host, sql_user, sql_pass):
                 #close the connection to the database.
                 mydb.commit()
                 cursor.close()
-                print("done!!")
+                logging.info("Load completed!!")
 
             except Exception as e:
-                print str(e)
+                logging.error(e)
 
             try:
                 os.remove(csv_name)
-            except:
-                print("unable to delete file.")
-        except:
-            print("No download for this date")
+            except Exception as e:
+                logging.error(e)
 
 
 
