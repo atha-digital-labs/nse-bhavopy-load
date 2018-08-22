@@ -73,6 +73,8 @@ def execute_load_data(range_value, sql_database, sql_host, sql_user, sql_pass):
 
             except Exception as e:
                 logging.error(e)
+            finally:
+                cursor.close()
 
             try:
                 os.remove(csv_name)
@@ -80,6 +82,21 @@ def execute_load_data(range_value, sql_database, sql_host, sql_user, sql_pass):
                 logging.error(e)
 
 
+    logging.info("Refreshing master data!")
+    try:
+        mydb = MySQLdb.connect(host=sql_host,
+            user=sql_user,
+            passwd=sql_pass,
+            db=sql_database)
+        cursor = mydb.cursor()
+        result_args=cursor.callproc('refresh_masters')
+
+    except Error as e:
+        logging.error(e)
+
+    finally:
+        cursor.close()
+    logging.info("Refres completed!")
 
 if __name__ == '__main__':
     execute_load_data()

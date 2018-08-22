@@ -13,12 +13,12 @@ Setting up a Ubuntu Server
     > sudo apt install python-pip
     > sudo pip install click
 
-  if installing click throws an error with locales settings
-    > export LC_ALL="en_US.UTF-8"
-    > export LC_CTYPE="en_US.UTF-8"
-    > sudo dpkg-reconfigure locales
+    if installing click throws an error with locales settings
+      > export LC_ALL="en_US.UTF-8"
+      > export LC_CTYPE="en_US.UTF-8"
+      > sudo dpkg-reconfigure locales
 
-  save the settings and then retry to install click using pip
+    save the settings and then retry to install click using pip
 
 
 Get the repo from github
